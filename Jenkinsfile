@@ -7,36 +7,35 @@ pipeline {
                 git branch: 'master',  url: 'https://github.com/uniquebiwas/weatherApp-Reactjs'
             }
         }
+
+        stage('Cleanup') {
+            steps {
+                script {
+                    // Remove unused Docker images and containers
+                    sh 'docker image prune -f'
+                    sh 'docker container prune -f'
+                }
+            }
+        }
+
+        stage('Stop and Remove Container') {
+            steps {
+                script {
+                    // Stop and remove the existing container if it exists
+                    sh 'docker-compose down || true'
+                }
+            }
+        }
+
         stage('Build and Run') {
             steps {
                 script {
                     // Build the Docker image and run the container
-                    sh 'docker build . -t test-app' 
+                    sh 'docker-compose up -d'
 
                 }
             }
         }
-        stage('Login to Docker Hub and Push to docker hub') {
-            steps {
-                script {
-                    
-                    withCredentials([usernamePassword(credentialsId:"dockerHub",passwordVariable:"dockerpass",usernameVariable:"user")]){
-                    sh "docker tag test-app:latest ${env.user}/test-app:latest"
-                    sh "echo ${env.dockerpass} | docker login -u ${env.user} --password-stdin"
-                    sh "docker push ${env.user}/test-app:latest"
-
-                    }
         
-                }
-            }
-        }
-        stage('tag push') {
-            steps {
-                script {
-                    echo "A new tag was created and pushed to docker hub
-                
-                }
-            }
-        }
     }
 }
